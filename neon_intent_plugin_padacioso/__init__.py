@@ -17,21 +17,21 @@ class PadaciosoExtractor(IntentExtractor):
         super().detach_intent(intent_name)
         self.container.remove_intent(intent_name)
 
-    def register_entity(self, entity_name, samples=None):
-        super().register_entity(entity_name, samples)
+    def register_entity(self, entity_name, samples=None, lang=None):
+        super().register_entity(entity_name, samples, lang)
         samples = samples or [entity_name]
         self.container.add_entity(entity_name, samples)
 
-    def register_intent(self, intent_name, samples=None):
-        super().register_intent(intent_name, samples)
+    def register_intent(self, intent_name, samples=None, lang=None):
+        super().register_intent(intent_name, samples, lang)
         self.container.add_intent(intent_name, samples)
 
-    def calc_intent(self, utterance, min_conf=0.5):
+    def calc_intent(self, utterance, min_conf=0.5, lang=None):
         utterance = utterance.strip().lower()
         intent = self.container.calc_intent(utterance)
         if intent["name"]:
             remainder = self.get_utterance_remainder(
-                utterance, samples=self.intent_samples[intent["name"]])
+                utterance, samples=self.get_intent_samples(intent["name"], lang))
             intent["intent_engine"] = "padacioso"
             intent["intent_type"] = intent.pop("name")
             intent["utterance"] = utterance
@@ -45,9 +45,4 @@ class PadaciosoExtractor(IntentExtractor):
             ratio = ratio / len(self.segmenter.segment(utterance))
             intent["conf"] = 1 - ratio
             return intent
-        return {'conf': 0,
-                'intent_type': 'unknown',
-                'entities': {},
-                'utterance': utterance,
-                'utterance_remainder': utterance,
-                'intent_engine': 'padacioso'}
+        return None
