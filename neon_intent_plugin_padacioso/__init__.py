@@ -11,27 +11,43 @@ class PadaciosoExtractor(IntentExtractor):
                  segmenter=None):
         super().__init__(config, strategy=strategy,
                          priority=priority, segmenter=segmenter)
-        self.container = IntentContainer()
+        self.engines = {}  # lang: IntentContainer
+
+    def _get_engine(self, lang=None):
+        lang = lang or self.lang
+        if lang not in self.engines:
+            self.engines[lang] = IntentContainer()
+        return self.engines[lang]
 
     def detach_intent(self, intent_name):
         super().detach_intent(intent_name)
         self.container.remove_intent(intent_name)
 
-    def register_entity(self, entity_name, samples=None):
-        super().register_entity(entity_name, samples)
+    def register_entity(self, entity_name, samples=None, lang=None):
+        lang = lang or self.lang
+        container = self._get_engine(lang)
+        super().register_entity(entity_name, samples, lang)
         samples = samples or [entity_name]
-        self.container.add_entity(entity_name, samples)
+        container.add_entity(entity_name, samples)
 
-    def register_intent(self, intent_name, samples=None):
-        super().register_intent(intent_name, samples)
-        self.container.add_intent(intent_name, samples)
+    def register_intent(self, intent_name, samples=None, lang=None):
+        lang = lang or self.lang
+        container = self._get_engine(lang)
+        super().register_intent(intent_name, samples, lang)
+        container.add_intent(intent_name, samples)
 
-    def calc_intent(self, utterance, min_conf=0.5):
+    def calc_intent(self, utterance, min_conf=0.5, lang=None, session=None):
+        lang = lang or self.lang
+        container = self._get_engine(lang)
         utterance = utterance.strip().lower()
-        intent = self.container.calc_intent(utterance)
+        intent = container.calc_intent(utterance)
         if intent["name"]:
-            remainder = self.get_utterance_remainder(
-                utterance, samples=self.intent_samples[intent["name"]])
+            for intent in self.registered_intents:
+                if intent.name == intent["name"]:
+                    remainder = intent.get_utterance_remainder(utterance)
+                    break
+            else:
+                remainder = ""
             intent["intent_engine"] = "padacioso"
             intent["intent_type"] = intent.pop("name")
             intent["utterance"] = utterance
