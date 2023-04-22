@@ -20,8 +20,10 @@ class PadaciosoExtractor(IntentExtractor):
         return self.engines[lang]
 
     def detach_intent(self, intent_name):
+        for intent in self.registered_intents:
+            if intent.name == intent_name and intent.lang in self.engines:
+                self.engines[intent.lang].remove_intent(intent_name)
         super().detach_intent(intent_name)
-        self.container.remove_intent(intent_name)
 
     def register_entity(self, entity_name, samples=None, lang=None):
         lang = lang or self.lang
