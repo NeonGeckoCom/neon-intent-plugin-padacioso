@@ -1,4 +1,4 @@
-from ovos_plugin_manager.intents import IntentExtractor, IntentPriority, IntentDeterminationStrategy
+from ovos_plugin_manager.intents import IntentExtractor, IntentPriority, IntentDeterminationStrategy, IntentMatch
 
 from padacioso import IntentContainer
 
@@ -62,10 +62,10 @@ class PadaciosoExtractor(IntentExtractor):
             ratio += 0.01
             ratio = ratio / len(self.segmenter.segment(utterance))
             intent["conf"] = 1 - ratio
-            return intent
-        return {'conf': 0,
-                'intent_type': 'unknown',
-                'entities': {},
-                'utterance': utterance,
-                'utterance_remainder': utterance,
-                'intent_engine': 'padacioso'}
+            skill_id = self.get_intent_skill_id(intent["intent_type"])
+            return IntentMatch(intent_service=intent["intent_engine"],
+                               intent_type=intent["intent_type"],
+                               intent_data=intent,
+                               confidence=intent["conf"],
+                               skill_id=skill_id)
+        return None
